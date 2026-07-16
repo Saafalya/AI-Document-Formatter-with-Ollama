@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}Preview — AI Document Formatter{% endblock %}
+
+{% block content %}
+<div class="preview-page">
+  <div class="page-header">
+    <div>
+      <div class="page-eyebrow">Document Preview</div>
+      <h1 class="page-title">Side-by-Side Comparison</h1>
+      <p class="page-sub">Compare original text with AI-rewritten and formatted output.</p>
+    </div>
+    <div class="preview-controls">
+      <button class="toggle-btn active" id="showAll" type="button">All paragraphs</button>
+      <button class="toggle-btn" id="showChanged" type="button">Changed only ({{ results.preview | selectattr('changed') | list | length }})</button>
+    </div>
+  </div>
+
+  {% if results.preview %}
+  <div class="preview-stats">
+    <span class="stat-chip">{{ results.preview | length }} sections shown</span>
+    <span class="stat-chip stat-changed">{{ results.preview | selectattr('changed') | list | length }} modified</span>
+  </div>
+
+  <div class="preview-table-wrap">
+    <div class="preview-table-header">
+      <div>Original</div>
+      <div>Formatted</div>
+    </div>
+
+    <div class="preview-rows" id="previewRows">
+      {% for entry in results.preview %}
+      <div class="preview-row {% if entry.changed %}row-changed{% endif %}"
+           data-changed="{{ 'true' if entry.changed else 'false' }}">
+        <div class="preview-cell original-cell">
+          {% if entry.type == 'heading' %}
+          <div class="doc-heading h{{ entry.level }}">{{ entry.original }}</div>
+          {% else %}
+          <div class="doc-para">{{ entry.original }}</div>
+          {% endif %}
+          {% if entry.violations %}
+          <div class="violation-tags">
+            {% for v in entry.violations %}
+            <span class="vtag">{{ v | replace('_',' ') }}</span>
+            {% endfor %}
+          </div>
+          {% endif %}
+        </div>
+        <div class="preview-cell formatted-cell">
+          {% if entry.type == 'heading' %}
+          <div class="doc-heading h{{ entry.level }} {% if entry.changed %}text-changed{% endif %}">{{ entry.rewritten }}</div>
+          {% else %}
+          <div class="doc-para {% if entry.changed %}text-changed{% endif %}">{{ entry.rewritten }}</div>
+          {% endif %}
+          {% if entry.changed %}
+          <span class="changed-badge">Modified</span>
+          {% else %}
+          <span class="unchanged-badge">Unchanged</span>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+
+  <div class="preview-footer">
+    <a href="{{ url_for('results') }}" class="btn-primary btn-sm btn-outline">← Back to Results</a>
+    <a href="{{ url_for('download', filename=results.output_filename) }}" class="btn-primary btn-sm">Download Formatted DOCX</a>
+    <a href="{{ url_for('changelog') }}" class="btn-primary btn-sm btn-outline">View Change Log</a>
+  </div>
+
+  {% else %}
+  <div class="empty-panel">
+    <div class="empty-icon">📄</div>
+    <div class="empty-title">No preview available</div>
+    <div class="empty-sub">The document may not contain readable paragraph content.</div>
+    <a href="{{ url_for('results') }}" class="btn-primary btn-sm" style="margin-top:1rem;display:inline-block">Back to Results</a>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const showAll = document.getElementById('showAll');
+const showChanged = document.getElementById('showChanged');
+const rows = document.querySelectorAll('.preview-row');
+
+if (showAll && showChanged) {
+  showAll.addEventListener('click', () => {
+    showAll.classList.add('active'); showChanged.classList.remove('active');
+    rows.forEach(r => r.style.display = '');
+  });
+  showChanged.addEventListener('click', () => {
+    showChanged.classList.add('active'); showAll.classList.remove('active');
+    rows.forEach(r => { r.style.display = r.dataset.changed === 'true' ? '' : 'none'; });
+  });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,227 @@
+{% extends "base.html" %}
+{% block title %}Upload — AI Document Formatter{% endblock %}
+
+{% block content %}
+<div class="upload-page">
+  <div class="hero">
+    <div class="hero-badge">Enterprise Document Compliance</div>
+    <h1 class="hero-title">Format documents to<br><span class="accent">style guide standards</span></h1>
+    <p class="hero-sub">Upload your Word document and corporate style guide PDF. Our AI analyses violations, rewrites content, and applies formatting — in one step.</p>
+  </div>
+
+  <div class="upload-card">
+    <form id="uploadForm" enctype="multipart/form-data">
+      <div class="upload-grid">
+        <label class="upload-tile" id="docxZone" for="docxInput">
+          <input type="file" id="docxInput" name="docx_file" accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document" />
+          <div class="tile-icon tile-docx">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <path d="M9 4h10l8 8v16H9V4z" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M19 4v8h8" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </div>
+          <div class="tile-title">Word Document</div>
+          <div class="tile-hint">Drop .docx here or click to browse</div>
+          <div class="tile-file" id="docxSelected"></div>
+        </label>
+
+        <label class="upload-tile" id="pdfZone" for="pdfInput">
+          <input type="file" id="pdfInput" name="pdf_file" accept=".pdf,application/pdf" />
+          <div class="tile-icon tile-pdf">
+            <svg width="32" height="32" viewBox="0 0 32 32" fill="none" aria-hidden="true">
+              <path d="M9 4h10l8 8v16H9V4z" stroke="currentColor" stroke-width="1.5"/>
+              <path d="M19 4v8h8" stroke="currentColor" stroke-width="1.5"/>
+              <text x="11" y="22" font-size="7" fill="currentColor" font-weight="bold">PDF</text>
+            </svg>
+          </div>
+          <div class="tile-title">Style Guide</div>
+          <div class="tile-hint">Drop .pdf here or click to browse</div>
+          <div class="tile-file" id="pdfSelected"></div>
+        </label>
+      </div>
+
+      <div id="errorMsg" class="alert alert-error hidden" role="alert"></div>
+
+      <button type="submit" class="btn-primary btn-lg" id="runBtn" disabled>
+        <span class="btn-label" id="btnLabel">Analyse &amp; Format Document</span>
+        <span class="btn-loading hidden" id="btnLoading">
+          <span class="spinner"></span>
+          Processing…
+        </span>
+      </button>
+
+      <p class="upload-note">Both files are required. Processing typically takes 30–90 seconds with AI enabled.</p>
+    </form>
+  </div>
+
+  <div class="features-row">
+    <div class="feature-card">
+      <div class="feature-num">01</div>
+      <div class="feature-text"><strong>Detect</strong> formatting, writing &amp; structure violations</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">02</div>
+      <div class="feature-text"><strong>Rewrite</strong> non-compliant text with AI validation</div>
+    </div>
+    <div class="feature-card">
+      <div class="feature-num">03</div>
+      <div class="feature-text"><strong>Export</strong> formatted DOCX + compliance PDF report</div>
+    </div>
+  </div>
+</div>
+
+<!-- Full-screen processing overlay -->
+<div id="processingOverlay" class="overlay hidden" aria-live="polite" aria-busy="true">
+  <div class="overlay-card">
+    <div class="overlay-spinner"></div>
+    <h2 class="overlay-title">Analysing your document</h2>
+    <p class="overlay-status" id="overlayStatus">Uploading files…</p>
+    <ul class="overlay-steps" id="overlaySteps">
+      <li data-step="1">Parsing style guide</li>
+      <li data-step="2">Extracting semantic rules (Ollama)</li>
+      <li data-step="3">Analysing document structure</li>
+      <li data-step="4">Detecting violations &amp; rewriting</li>
+      <li data-step="5">Applying formatting</li>
+      <li data-step="6">Generating compliance report</li>
+    </ul>
+    <p class="overlay-hint">Please keep this tab open. Do not refresh.</p>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function() {
+  const form = document.getElementById('uploadForm');
+  const docxInput = document.getElementById('docxInput');
+  const pdfInput = document.getElementById('pdfInput');
+  const docxZone = document.getElementById('docxZone');
+  const pdfZone = document.getElementById('pdfZone');
+  const docxSelected = document.getElementById('docxSelected');
+  const pdfSelected = document.getElementById('pdfSelected');
+  const runBtn = document.getElementById('runBtn');
+  const btnLabel = document.getElementById('btnLabel');
+  const btnLoading = document.getElementById('btnLoading');
+  const errorMsg = document.getElementById('errorMsg');
+  const overlay = document.getElementById('processingOverlay');
+  const overlayStatus = document.getElementById('overlayStatus');
+  const overlaySteps = document.getElementById('overlaySteps');
+
+  const STATUS_MESSAGES = [
+    'Parsing style guide PDF…',
+    'Extracting semantic rules with Ollama…',
+    'Analysing document structure…',
+    'Detecting violations and rewriting text…',
+    'Applying formatting rules…',
+    'Generating compliance report…',
+  ];
+
+  function bindFile(input, zone, selectedEl) {
+    function update() {
+      const file = input.files[0];
+      if (file) {
+        selectedEl.textContent = file.name;
+        zone.classList.add('has-file');
+      } else {
+        selectedEl.textContent = '';
+        zone.classList.remove('has-file');
+      }
+      runBtn.disabled = !(docxInput.files[0] && pdfInput.files[0]);
+    }
+    input.addEventListener('change', update);
+
+    zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('drag-over'); });
+    zone.addEventListener('dragleave', () => zone.classList.remove('drag-over'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('drag-over');
+      if (e.dataTransfer.files[0]) {
+        input.files = e.dataTransfer.files;
+        update();
+      }
+    });
+  }
+
+  bindFile(docxInput, docxZone, docxSelected);
+  bindFile(pdfInput, pdfZone, pdfSelected);
+
+  function showError(msg) {
+    errorMsg.textContent = msg;
+    errorMsg.classList.remove('hidden');
+    overlay.classList.add('hidden');
+    runBtn.disabled = !(docxInput.files[0] && pdfInput.files[0]);
+    btnLabel.classList.remove('hidden');
+    btnLoading.classList.add('hidden');
+  }
+
+  function startOverlay() {
+    overlay.classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    let step = 0;
+    overlaySteps.querySelectorAll('li').forEach(li => li.classList.remove('active', 'done'));
+
+    const tick = setInterval(() => {
+      if (step < STATUS_MESSAGES.length) {
+        overlayStatus.textContent = STATUS_MESSAGES[step];
+        overlaySteps.querySelectorAll('li').forEach((li, i) => {
+          li.classList.toggle('active', i === step);
+          li.classList.toggle('done', i < step);
+        });
+        step++;
+      }
+    }, 8000);
+
+    return () => {
+      clearInterval(tick);
+      overlaySteps.querySelectorAll('li').forEach(li => { li.classList.add('done'); li.classList.remove('active'); });
+      overlayStatus.textContent = 'Complete! Redirecting…';
+    };
+  }
+
+  form.addEventListener('submit', async e => {
+    e.preventDefault();
+    errorMsg.classList.add('hidden');
+
+    if (!docxInput.files[0] || !pdfInput.files[0]) {
+      showError('Please select both a DOCX document and a style guide PDF.');
+      return;
+    }
+
+    runBtn.disabled = true;
+    btnLabel.classList.add('hidden');
+    btnLoading.classList.remove('hidden');
+    const stopOverlay = startOverlay();
+
+    const fd = new FormData();
+    fd.append('docx_file', docxInput.files[0]);
+    fd.append('pdf_file', pdfInput.files[0]);
+
+    try {
+      const resp = await fetch('/process', {
+        method: 'POST',
+        body: fd,
+        credentials: 'same-origin',
+      });
+
+      let data;
+      try {
+        data = await resp.json();
+      } catch {
+        throw new Error('Server returned an invalid response. Please try again.');
+      }
+
+      if (!resp.ok || data.status !== 'ok') {
+        throw new Error(data.message || 'Processing failed. Please try again.');
+      }
+
+      stopOverlay();
+      setTimeout(() => { window.location.href = data.redirect; }, 600);
+
+    } catch (err) {
+      stopOverlay();
+      showError(err.message || 'Something went wrong. Please try again.');
+    }
+  });
+})();
+</script>
+{% endblock %}

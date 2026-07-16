@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{% block title %}AI Document Formatter{% endblock %}</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}" />
+</head>
+<body>
+
+<nav class="navbar">
+  <a class="nav-brand" href="{{ url_for('index') }}">
+    <svg width="28" height="28" viewBox="0 0 28 28" fill="none" aria-hidden="true">
+      <rect width="28" height="28" rx="6" fill="#6366f1"/>
+      <path d="M7 8h14M7 13h10M7 18h12" stroke="white" stroke-width="2" stroke-linecap="round"/>
+      <circle cx="21" cy="18" r="3" fill="#22d3ee" stroke="white" stroke-width="1.5"/>
+    </svg>
+    <span>DocFormatter<span class="brand-ai">AI</span></span>
+  </a>
+
+  <div class="nav-links">
+    <a href="{{ url_for('index') }}" class="nav-link {% if request.endpoint == 'index' %}active{% endif %}">Upload</a>
+    {% if has_results %}
+    <a href="{{ url_for('results') }}" class="nav-link {% if request.endpoint == 'results' %}active{% endif %}">Results</a>
+    <a href="{{ url_for('preview') }}" class="nav-link {% if request.endpoint == 'preview' %}active{% endif %}">Preview</a>
+    <a href="{{ url_for('changelog') }}" class="nav-link {% if request.endpoint == 'changelog' %}active{% endif %}">Changes</a>
+    <a href="{{ url_for('rules') }}" class="nav-link {% if request.endpoint == 'rules' %}active{% endif %}">Rules</a>
+    {% endif %}
+  </div>
+
+  <div class="nav-actions">
+    {% if has_results and run_summary %}
+    <span class="nav-score">{{ run_summary.overall_score }}% · {{ run_summary.grade }}</span>
+    <a href="{{ url_for('download', filename=run_summary.output_filename) }}" class="btn-download btn-sm">
+      <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+        <path d="M8 12l-4-4h2.5V3h3v5H12L8 12z"/>
+        <rect x="2" y="13" width="12" height="1.5" rx=".75"/>
+      </svg>
+      DOCX
+    </a>
+    {% if run_summary.report_filename %}
+    <a href="{{ url_for('download_report', filename=run_summary.report_filename) }}" class="btn-download btn-sm btn-outline">PDF</a>
+    {% endif %}
+    {% endif %}
+    <a href="{{ url_for('new_analysis') }}" class="nav-link nav-new" title="Start new analysis">+ New</a>
+  </div>
+</nav>
+
+<main class="main-content">
+  {% block content %}{% endblock %}
+</main>
+
+<div id="toast" class="toast hidden" role="alert"></div>
+
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

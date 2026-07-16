@@ -1,0 +1,95 @@
+{% extends "base.html" %}
+{% block title %}Extracted Rules — AI Document Formatter{% endblock %}
+
+{% block content %}
+<div class="rules-page">
+  <div class="page-header">
+    <div>
+      <div class="page-eyebrow">Style Guide Interpretation</div>
+      <h1 class="page-title">AI-Extracted Rules</h1>
+    </div>
+  </div>
+
+  <div class="rules-grid">
+
+    <div class="rules-panel">
+      <div class="rules-panel-header">
+        <span class="rules-icon">🖋</span>
+        <h2>Formatting Rules</h2>
+        <span class="rules-badge">CSS</span>
+        <span class="rules-count">{{ results.extracted_rules.formatting | length }}</span>
+      </div>
+      <p class="rules-source">Source: <code>{{ results.extracted_rules.formatting_source | default('static/css/document_formatting.css') }}</code> — not AI-extracted</p>
+      <div class="rules-table">
+        {% for key, value in results.extracted_rules.formatting.items() %}
+        {% if value is not none %}
+        <div class="rule-row">
+          <div class="rule-key">{{ key | replace('_',' ') | title }}</div>
+          <div class="rule-val">
+            {% if value is sameas true %}✓ Yes
+            {% elif value is sameas false %}✗ No
+            {% else %}{{ value }}{% endif %}
+          </div>
+        </div>
+        {% endif %}
+        {% else %}
+        <div class="rule-empty">No formatting rules extracted.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="rules-panel">
+      <div class="rules-panel-header">
+        <span class="rules-icon">✍️</span>
+        <h2>Writing Rules</h2>
+        <span class="rules-badge rules-badge-ai">Ollama</span>
+        <span class="rules-count">{{ results.extracted_rules.writing | length }}</span>
+      </div>
+      <p class="rules-source">Source: {{ results.extracted_rules.writing_source | default('Ollama AI + style_rules.json') }}</p>
+      <div class="rules-list">
+        {% for rule in results.extracted_rules.writing %}
+        <div class="writing-rule">
+          <span class="rule-bullet">→</span>
+          {{ rule }}
+        </div>
+        {% else %}
+        <div class="rule-empty">No writing rules extracted.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="rules-panel">
+      <div class="rules-panel-header">
+        <span class="rules-icon">🏗</span>
+        <h2>Structure Rules</h2>
+      </div>
+      <div class="rules-table">
+        {% if results.extracted_rules.structure %}
+          {% for key, value in results.extracted_rules.structure.items() %}
+          {% if value is not none %}
+          <div class="rule-row">
+            <div class="rule-key">{{ key | replace('_',' ') | title }}</div>
+            <div class="rule-val">
+              {% if value is iterable and value is not string %}
+                {{ value | join(', ') }}
+              {% elif value is sameas true %}✓ Yes
+              {% elif value is sameas false %}✗ No
+              {% else %}{{ value }}{% endif %}
+            </div>
+          </div>
+          {% endif %}
+          {% endfor %}
+        {% else %}
+        <div class="rule-empty">No structure rules extracted.</div>
+        {% endif %}
+      </div>
+    </div>
+
+  </div>
+
+  <div class="page-footer-nav">
+    <a href="{{ url_for('results') }}" class="btn-primary btn-sm btn-outline">← Back to Results</a>
+    <a href="{{ url_for('preview') }}" class="btn-primary btn-sm btn-outline">View Preview</a>
+  </div>
+</div>
+{% endblock %}

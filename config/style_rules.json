@@ -1,0 +1,49 @@
+{
+  "writing_rules": [
+    "Use active voice instead of passive voice.",
+    "Do not begin instructions with 'Please'.",
+    "Use inclusive language throughout.",
+    "Avoid filler words such as very, basically, and actually.",
+    "Use preferred corporate terminology consistently."
+  ],
+  "structure_rules": {
+    "heading_hierarchy": true,
+    "required_sections": [
+      "Introduction",
+      "Scope",
+      "Conclusion"
+    ],
+    "max_heading_depth": 3
+  },
+  "branding_rules": {
+    "company_name": "Acme Corporation",
+    "tagline": "Excellence in every document",
+    "primary_color": "#003366"
+  },
+  "table_rules": {
+    "alternate_row_shading": false
+  },
+  "image_rules": {
+    "max_width_inches": 6.0,
+    "caption_required": true,
+    "caption_style": "Figure {n}: {title}"
+  },
+  "inclusive_language_map": {
+    "chairman": "chairperson",
+    "manpower": "workforce",
+    "mankind": "humanity",
+    "fireman": "firefighter",
+    "policeman": "police officer",
+    "stewardess": "flight attendant",
+    "salesman": "sales representative"
+  },
+  "terminology_map": {
+    "utilize": "use",
+    "leverage": "use",
+    "synergy": "collaboration",
+    "paradigm": "approach",
+    "bandwidth": "capacity",
+    "circle back": "follow up",
+    "low-hanging fruit": "quick wins"
+  }
+}

@@ -1,0 +1,192 @@
+{% extends "base.html" %}
+{% block title %}Compliance Results — AI Document Formatter{% endblock %}
+
+{% block content %}
+<div class="results-page">
+
+  <div class="success-banner">
+    <div class="success-icon">✓</div>
+    <div>
+      <div class="success-title">Analysis complete</div>
+      <div class="success-sub">Your document has been analysed, rewritten where needed, and formatted.</div>
+    </div>
+    <div class="success-actions">
+      <a href="{{ url_for('preview') }}" class="btn-primary btn-sm">View Preview</a>
+      <a href="{{ url_for('download', filename=results.output_filename) }}" class="btn-primary btn-sm btn-outline">Download DOCX</a>
+      {% if results.report_filename %}
+      <a href="{{ url_for('download_report', filename=results.report_filename) }}" class="btn-primary btn-sm btn-outline">Download PDF Report</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="page-header">
+    <div>
+      <div class="page-eyebrow">Compliance Report</div>
+      <h1 class="page-title">Document Analysis Results</h1>
+      {% if results.docx_upload %}
+      <p class="page-sub">{{ results.docx_upload }}</p>
+      {% endif %}
+    </div>
+    <div class="header-meta">
+      <span class="meta-pill">{{ results.metadata.word_count | default(0) }} words</span>
+      <span class="grade-badge grade-{{ results.scores.grade | replace('+','p') | lower }}">
+        {{ results.scores.grade }}
+      </span>
+    </div>
+  </div>
+
+  <div class="score-grid">
+    <div class="score-card score-overall">
+      <div class="score-label">Overall Score</div>
+      <div class="score-ring-wrap">
+        <svg class="score-ring" viewBox="0 0 120 120" aria-hidden="true">
+          <circle cx="60" cy="60" r="50" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="10"/>
+          <circle cx="60" cy="60" r="50" fill="none"
+            stroke="{% if results.scores.overall_score >= 80 %}#22d3ee{% elif results.scores.overall_score >= 60 %}#f59e0b{% else %}#ef4444{% endif %}"
+            stroke-width="10" stroke-linecap="round"
+            stroke-dasharray="{{ (results.scores.overall_score / 100 * 314.16) | round(1) }} 314.16"
+            transform="rotate(-90 60 60)"/>
+        </svg>
+        <div class="score-num">{{ results.scores.overall_score }}<span class="score-pct">%</span></div>
+      </div>
+    </div>
+
+    {% for label, key, color in [('Writing','writing_score','#6366f1'),('Formatting','formatting_score','#22d3ee'),('Structure','structure_score','#a78bfa')] %}
+    <div class="score-card">
+      <div class="score-label">{{ label }}</div>
+      <div class="score-bar-wrap">
+        <div class="score-value">{{ results.scores[key] }}%</div>
+        <div class="score-bar">
+          <div class="score-fill" style="width:{{ results.scores[key] }}%; background:{{ color }}"></div>
+        </div>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="dashboard-grid">
+    <div class="dash-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Violations by Category</h2>
+        <span class="panel-count">{{ results.violations | length }} total</span>
+      </div>
+      <div class="category-bars">
+        {% set vbc = results.violation_by_category %}
+        {% set max_v = [vbc.get('writing',0), vbc.get('formatting',0), vbc.get('structure',0)] | max %}
+        {% for cat, color in [('writing','#6366f1'),('formatting','#22d3ee'),('structure','#a78bfa')] %}
+        {% set cnt = vbc.get(cat, 0) %}
+        <div class="cat-bar-row">
+          <div class="cat-name">{{ cat | capitalize }}</div>
+          <div class="cat-bar-track">
+            <div class="cat-bar-fill" style="width:{{ ((cnt / max_v * 100) if max_v else 0) | round }}%; background:{{ color }}"></div>
+          </div>
+          <div class="cat-count">{{ cnt }}</div>
+        </div>
+        {% endfor %}
+      </div>
+      <div class="severity-chips">
+        <div class="sev-chip sev-error"><span class="sev-dot"></span>{{ results.violation_by_severity.get('error', 0) }} Errors</div>
+        <div class="sev-chip sev-warning"><span class="sev-dot"></span>{{ results.violation_by_severity.get('warning', 0) }} Warnings</div>
+        <div class="sev-chip sev-info"><span class="sev-dot"></span>{{ results.violation_by_severity.get('info', 0) }} Info</div>
+      </div>
+    </div>
+
+    <div class="dash-panel">
+      <div class="panel-header"><h2 class="panel-title">Violation Breakdown</h2></div>
+      <div class="violation-list">
+        {% set sorted_counts = results.violation_counts | dictsort(by='value', reverse=True) %}
+        {% for vtype, count in sorted_counts[:10] %}
+        <div class="viol-row">
+          <div class="viol-name">{{ vtype | replace('_',' ') | title }}</div>
+          <div class="viol-bar-wrap"><div class="viol-bar" style="width:{{ [count * 12, 100] | min }}%"></div></div>
+          <div class="viol-count">{{ count }}</div>
+        </div>
+        {% else %}
+        <div class="empty-state">No violations detected.</div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="dash-panel">
+      <div class="panel-header"><h2 class="panel-title">Changes Made</h2></div>
+      <div class="change-summary-grid">
+        <div class="cs-item"><div class="cs-num">{{ results.change_summary.total_changes }}</div><div class="cs-label">Total</div></div>
+        <div class="cs-item cs-accepted"><div class="cs-num">{{ results.change_summary.accepted }}</div><div class="cs-label">Accepted</div></div>
+        <div class="cs-item cs-rejected"><div class="cs-num">{{ results.change_summary.rejected }}</div><div class="cs-label">Rejected</div></div>
+      </div>
+      <a href="{{ url_for('changelog') }}" class="panel-link">View full change log →</a>
+    </div>
+
+    <div class="dash-panel recommendations-panel">
+      <div class="panel-header">
+        <h2 class="panel-title">Recommendations</h2>
+        <span class="panel-count">{{ results.recommendations | length }}</span>
+      </div>
+      <div class="rec-list">
+        {% for rec in results.recommendations[:8] %}
+        <div class="rec-item sev-border-{{ rec.severity }}">
+          <div class="rec-meta">
+            <span class="rec-sev sev-tag-{{ rec.severity }}">{{ rec.severity | upper }}</span>
+            {% if rec.count %}<span class="rec-count">×{{ rec.count }}</span>{% endif %}
+          </div>
+          <div class="rec-text">{{ rec.recommendation }}</div>
+        </div>
+        {% else %}
+        <div class="empty-state">No recommendations — document looks great!</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+
+  {% if results.violations %}
+  <div class="dash-panel violations-table-panel">
+    <div class="panel-header">
+      <h2 class="panel-title">All Violations</h2>
+      <div class="table-filters">
+        <button class="filter-btn active" data-filter="all">All</button>
+        <button class="filter-btn" data-filter="error">Errors</button>
+        <button class="filter-btn" data-filter="warning">Warnings</button>
+        <button class="filter-btn" data-filter="writing">Writing</button>
+        <button class="filter-btn" data-filter="formatting">Formatting</button>
+        <button class="filter-btn" data-filter="structure">Structure</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table class="violations-table">
+        <thead>
+          <tr><th>#</th><th>Type</th><th>Category</th><th>Severity</th><th>Section</th><th>Message</th></tr>
+        </thead>
+        <tbody>
+          {% for v in results.violations %}
+          <tr data-severity="{{ v.severity }}" data-category="{{ v.category }}">
+            <td class="td-idx">{{ loop.index }}</td>
+            <td><span class="type-tag">{{ v.type | replace('_',' ') | title }}</span></td>
+            <td>{{ v.category | capitalize }}</td>
+            <td><span class="sev-tag sev-tag-{{ v.severity }}">{{ v.severity }}</span></td>
+            <td class="td-section">{{ v.section[:35] }}{% if v.section|length > 35 %}…{% endif %}</td>
+            <td class="td-msg">{{ v.message[:120] }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.querySelectorAll('.filter-btn').forEach(btn => {
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+    this.classList.add('active');
+    const filter = this.dataset.filter;
+    document.querySelectorAll('.violations-table tbody tr').forEach(row => {
+      if (filter === 'all') { row.style.display = ''; return; }
+      row.style.display = (row.dataset.severity === filter || row.dataset.category === filter) ? '' : 'none';
+    });
+  });
+});
+</script>
+{% endblock %}

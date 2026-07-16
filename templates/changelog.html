@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Change Log — AI Document Formatter{% endblock %}
+
+{% block content %}
+<div class="changelog-page">
+  <div class="page-header">
+    <div>
+      <div class="page-eyebrow">Audit Trail</div>
+      <h1 class="page-title">Change Log</h1>
+    </div>
+    <div class="header-meta">
+      <span class="meta-pill">{{ results.changes | length }} changes</span>
+    </div>
+  </div>
+
+  {% if results.changes %}
+  <div class="changelog-summary">
+    <div class="cs-stat">
+      <span class="cs-n">{{ results.change_summary.accepted }}</span>
+      <span class="cs-l">Accepted</span>
+    </div>
+    <div class="cs-stat">
+      <span class="cs-n">{{ results.change_summary.rejected }}</span>
+      <span class="cs-l">Rejected</span>
+    </div>
+    {% for cat, cnt in results.change_summary.by_category.items() %}
+    <div class="cs-stat">
+      <span class="cs-n">{{ cnt }}</span>
+      <span class="cs-l">{{ cat | capitalize }}</span>
+    </div>
+    {% endfor %}
+  </div>
+
+  <div class="change-entries">
+    {% for change in results.changes %}
+    <div class="change-entry {% if not change.accepted %}change-rejected{% endif %}">
+      <div class="change-header">
+        <span class="change-type">{{ change.change_type | replace('_',' ') | title }}</span>
+        <span class="change-cat">{{ change.category }}</span>
+        <span class="sev-tag sev-tag-{{ change.severity }}">{{ change.severity }}</span>
+        {% if change.accepted %}
+        <span class="change-status accepted">✓ Applied</span>
+        {% else %}
+        <span class="change-status rejected">✗ Rejected</span>
+        {% endif %}
+        <span class="change-section">{{ change.section[:40] }}</span>
+      </div>
+
+      <div class="change-diff">
+        <div class="diff-before">
+          <div class="diff-label">Before</div>
+          <div class="diff-text">{{ change.before[:600] }}</div>
+        </div>
+        <div class="diff-arrow">→</div>
+        <div class="diff-after">
+          <div class="diff-label">After</div>
+          <div class="diff-text diff-text-after">{{ change.after[:600] }}</div>
+        </div>
+      </div>
+
+      {% if change.rule_applied %}
+      <div class="change-rule">Rule applied: <em>{{ change.rule_applied }}</em></div>
+      {% endif %}
+    </div>
+    {% endfor %}
+  </div>
+
+  {% else %}
+  <div class="empty-panel">
+    <div class="empty-icon">✓</div>
+    <div class="empty-title">No changes were made</div>
+    <div class="empty-sub">The document met all writing requirements, or rewrites were not applicable.</div>
+  </div>
+  {% endif %}
+
+  <div class="page-footer-nav">
+    <a href="{{ url_for('results') }}" class="btn-primary btn-sm btn-outline">← Back to Results</a>
+    <a href="{{ url_for('preview') }}" class="btn-primary btn-sm btn-outline">View Preview</a>
+  </div>
+</div>
+{% endblock %}

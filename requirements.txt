@@ -1,0 +1,14 @@
+# AI Document Formatter — Python dependencies
+flask>=3.0.0
+python-dotenv>=1.0.0
+python-docx>=1.1.0
+pdfplumber>=0.11.0
+sentence-transformers>=2.7.0
+transformers>=4.40.0
+reportlab>=4.2.0
+numpy>=1.26.0
+scikit-learn>=1.4.0
+torch>=2.2.0
+
+# Local LLM: Ollama (install separately — https://ollama.com)
+# No Python package required; uses Ollama REST API on localhost:11434

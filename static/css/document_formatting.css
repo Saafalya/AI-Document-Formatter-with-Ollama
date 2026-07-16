@@ -1,0 +1,45 @@
+/**
+ * document_formatting.css
+ * -----------------------
+ * Hardcoded visual formatting rules for DOCX output.
+ * Parsed by modules/formatting_css_loader.py — do not use for web UI styling.
+ *
+ * Units: pt = points, in = inches. Booleans: true | false.
+ */
+
+:root {
+  /* Body text */
+  --doc-font-family: Calibri;
+  --doc-font-size: 11pt;
+  --doc-alignment: left;
+  --doc-line-height: 1.15;
+
+  /* Paragraph spacing */
+  --doc-paragraph-spacing-before: 6pt;
+  --doc-paragraph-spacing-after: 6pt;
+
+  /* Headings */
+  --doc-heading-1-size: 16pt;
+  --doc-heading-2-size: 14pt;
+  --doc-heading-3-size: 12pt;
+  --doc-heading-1-bold: true;
+  --doc-heading-2-bold: true;
+  --doc-heading-3-bold: true;
+
+  /* Page margins */
+  --doc-margin-left: 1.25in;
+  --doc-margin-right: 1.25in;
+  --doc-margin-top: 1in;
+  --doc-margin-bottom: 1in;
+
+  /* Constraints */
+  --doc-avoid-all-caps: true;
+  --doc-avoid-underline: true;
+  --doc-avoid-excessive-bold: true;
+}
+
+/* Table formatting (applied via python-docx) */
+.doc-table {
+  --doc-table-header-bold: true;
+  --doc-table-border-style: single;
+}
